@@ -6,4 +6,4 @@
    * [x] **TODO: Find out which event is fired after registry init and replace chicken there**  
 2. Replace RenderingRegistry.INSTANCE.entityRenderers[EntityType<ChickenEntity>] with ShearableChickenRenderer
    * [x] **TODO: Do it on client only (ClientSetup.java)**  
-3. **[ ] TODO: Replace fields in EntityType<ChickenEntity> instead of the whole object**
+3. [ ] **TODO: Replace fields in EntityType<ChickenEntity> instead of the whole object**
