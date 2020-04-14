@@ -2,6 +2,7 @@ package com.bajuh.shearablechickenmod.entity;
 
 import com.bajuh.shearablechickenmod.Constants;
 import com.bajuh.shearablechickenmod.Entry;
+import com.bajuh.shearablechickenmod.helper.ReflectionUtils;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.entity.ChickenRenderer;
@@ -12,6 +13,7 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.passive.ChickenEntity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Tuple;
+import net.minecraft.util.math.MathHelper;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -28,7 +30,6 @@ public class ShearableChickenRenderer<T extends ShearableChickenEntity>
 
     public ShearableChickenRenderer(EntityRendererManager renderManagerIn) {
         super(renderManagerIn, new ShearableChickenModelBase.ShearableChickenModel<>(), 0.3F);
-        System.out.println("DEBUG: WeirdMobRenderer ctor");
     }
 
     @Override
@@ -57,18 +58,23 @@ public class ShearableChickenRenderer<T extends ShearableChickenEntity>
             : DEFAULT_TEXTURE;
     }
 
-    @Override
+    /*@Override
     public float handleRotationFloat(T livingBase, float partialTicks) {
         try {
-            Method m = ChickenRenderer.class
-                .getDeclaredMethod("handleRotationFloat", ChickenEntity.class, float.class);
-            m.setAccessible(true);
+            ReflectionUtils.InstanceMethod method = new ReflectionUtils.InstanceMethod(
+                ChickenRenderer.class, "handleRotationFloat", ChickenEntity.class, float.class);
             EntityRenderer<?> chickenRenderer = renderManager.renderers.get(EntityType.CHICKEN);
-            float result = (float)m.invoke(chickenRenderer, livingBase, partialTicks);
-            return result;
+            return (float)method.invoke(chickenRenderer, livingBase, partialTicks);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             Entry.LOGGER.error("Failed to call ChickenRenderer.handleRotationFloat");
             return 0F;
         }
+    }*/
+
+    @Override
+    protected float handleRotationFloat(T livingBase, float partialTicks) {
+        float f = MathHelper.lerp(partialTicks, livingBase.oFlap, livingBase.wingRotation);
+        float f1 = MathHelper.lerp(partialTicks, livingBase.oFlapSpeed, livingBase.destPos);
+        return (MathHelper.sin(f) + 1.0F) * f1;
     }
 }
