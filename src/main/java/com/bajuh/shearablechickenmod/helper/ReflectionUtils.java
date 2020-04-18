@@ -5,6 +5,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
+// Generic reflection helpers to aid MC source modification
 public class ReflectionUtils {
 
     public static class InstanceMethod<T> {
@@ -53,19 +54,32 @@ public class ReflectionUtils {
         return field.get(instance);
     }
 
-    public static void setInstanceFinalField(Field field, Object newValue, Object instance) throws NoSuchFieldException, IllegalAccessException {
+    public static void setInstanceFinalField(Field field, Object newValue, Object instance)
+        throws NoSuchFieldException, IllegalAccessException
+    {
         field.setAccessible(true);
+
         Field modifiersField = Field.class.getDeclaredField("modifiers");
         modifiersField.setAccessible(true);
         modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+
         field.set(instance, newValue);
     }
 
-    public static <T> void copyFields(Class<T> type, T fromInstance, T toInstance)
+    public static void setInstanceField(Field field, Object newValue, Object instance)
+        throws IllegalAccessException
+    {
+        field.setAccessible(true);
+
+        field.set(instance, newValue);
+    }
+
+    public static <T> void copyInstanceFields(Class<T> type, T fromInstance, T toInstance)
         throws IllegalAccessException, NoSuchFieldException
     {
         for (Field field: type.getDeclaredFields()){
-            if ((field.getModifiers() & Modifier.STATIC) == 0){
+            boolean isStatic = (field.getModifiers() & Modifier.STATIC) != 0;
+            if (!isStatic){
                 Object obj = getInstanceField(field, fromInstance);
                 setInstanceFinalField(field, obj, toInstance);
             }
