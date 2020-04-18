@@ -1,5 +1,6 @@
 package com.bajuh.shearablechickenmod.entity;
 
+import com.bajuh.shearablechickenmod.Constants;
 import com.bajuh.shearablechickenmod.Entry;
 import com.bajuh.shearablechickenmod.helper.RandomUtils;
 import net.minecraft.entity.EntityType;
@@ -22,15 +23,15 @@ import java.util.List;
 
 public class ShearableChickenEntity extends ChickenEntity implements IShearable {
 
+    // Persist shearable state and timer by overriding {read,write}Additional()
     private static final String NBT_SHEARED_STATE = "chicken_sheared_state";
     private static final String NBT_SHEARED_TIMER = "chicken_sheared_timer";
 
+    // Make state available on Client by using DataParameter
     private static final DataParameter<Boolean> SHEARED_STATE =
             EntityDataManager.createKey(ShearableChickenEntity.class, DataSerializers.BOOLEAN);
 
-    private static final int SHEAR_TIMER_MIN = 100;
-    private static final int SHEAR_TIMER_MAX = 500;
-
+    // Tick countdown variable. Handled only on server-side.
     private int shearedTimer = 0;
 
     public ShearableChickenEntity(EntityType<? extends ChickenEntity> type, World worldIn) {
@@ -69,12 +70,13 @@ public class ShearableChickenEntity extends ChickenEntity implements IShearable 
 
         if (isServer() && isSheared()){
             shearedTimer -= 1;
-            Entry.LOGGER.debug(String.format("Sheared timer: %d", shearedTimer));
+
             if (shearedTimer <= 0)
                 this.setSheared(false);
         }
     }
 
+    // Read state and timer from save file
     @Override
     public void readAdditional(CompoundNBT compound) {
         super.readAdditional(compound);
@@ -85,6 +87,7 @@ public class ShearableChickenEntity extends ChickenEntity implements IShearable 
             shearedTimer = compound.getInt(NBT_SHEARED_TIMER);
     }
 
+    // Save state and timer to save file
     @Override
     public void writeAdditional(CompoundNBT compound) {
         super.writeAdditional(compound);
@@ -117,18 +120,21 @@ public class ShearableChickenEntity extends ChickenEntity implements IShearable 
     // Logic
     //
 
+    // Remarks: fortune is ignored as seen in SheepEntity
     private List<ItemStack> serverOnShearedLogic(ItemStack item, IWorld world, BlockPos pos, int fortune) {
         List<ItemStack> itemsToDrop = new ArrayList<>();
 
+        // Don't drop when children
         if (isChild())
             return itemsToDrop;
 
-        Entry.LOGGER.debug("Chicken is sheared");
-
+        // Shearing part
+        Entry.LOGGER.info("Chicken is sheared");
         this.setSheared(true);
         this.playSound(SoundEvents.ENTITY_SHEEP_SHEAR, 1.0F, 1.0F);
-        this.shearedTimer = RandomUtils.nextInt(SHEAR_TIMER_MIN, SHEAR_TIMER_MAX, this.rand);
+        this.shearedTimer = RandomUtils.nextInt(Constants.SHEAR_TICK_MIN, Constants.SHEAR_TICK_MAX, this.rand);
 
+        // Dropping part
         int featherDropCount = RandomUtils.nextInt(1, 3, this.rand);
         for(int j = 0; j < featherDropCount; ++j)
             itemsToDrop.add(new ItemStack(Items.FEATHER));

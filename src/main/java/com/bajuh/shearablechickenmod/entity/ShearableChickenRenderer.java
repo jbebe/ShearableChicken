@@ -1,48 +1,57 @@
 package com.bajuh.shearablechickenmod.entity;
 
 import com.bajuh.shearablechickenmod.Constants;
-import com.bajuh.shearablechickenmod.Entry;
+import com.bajuh.shearablechickenmod.helper.ReflectionUtils;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.entity.ChickenRenderer;
-import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererManager;
 import net.minecraft.client.renderer.entity.MobRenderer;
-import net.minecraft.entity.EntityType;
 import net.minecraft.entity.passive.ChickenEntity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Tuple;
 
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.function.Supplier;
 
 public class ShearableChickenRenderer<T extends ShearableChickenEntity>
     extends MobRenderer<T, ShearableChickenModelBase<T>> {
 
-    private static final ResourceLocation DEFAULT_TEXTURE =
-        new ResourceLocation(Constants.ModID, "textures/entity/chicken.png");
+    private static ResourceLocation DEFAULT_TEXTURE = null;
     private static final ResourceLocation SHEARED_TEXTURE =
         new ResourceLocation(Constants.ModID, "textures/entity/shearedchicken.png");
 
+    // Trying to keep as much as possible from the original Chicken
+    // Here I load the default texture so that I don't need to keep a copy in the resource folder
+    static {
+        try {
+            DEFAULT_TEXTURE = (ResourceLocation)ReflectionUtils.getStaticField(
+                ChickenRenderer.class.getDeclaredField("CHICKEN_TEXTURES"));
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            e.printStackTrace();
+        }
+    }
+
     public ShearableChickenRenderer(EntityRendererManager renderManagerIn) {
-        super(renderManagerIn, new ShearableChickenModelBase.ShearableChickenModel<>(), 0.3F);
-        System.out.println("DEBUG: WeirdMobRenderer ctor");
+        super(renderManagerIn, new ShearableChickenModelBase.DefaultChickenModel<>(), 0.3F);
     }
 
     @Override
     public void render(T entityIn, float entityYaw, float partialTicks, MatrixStack matrixStackIn,
         IRenderTypeBuffer bufferIn, int packedLightIn)
     {
+        // Save the next required 3d model with its type
         Tuple<Type, Supplier<ShearableChickenModelBase<T>>> requiredModel = entityIn.isSheared()
             ? new Tuple<>(
-                ShearableChickenModelBase.DefaultChickenModel.class,
-                ShearableChickenModelBase.DefaultChickenModel::new)
+                ShearableChickenModelBase.ShearedChickenModel.class,
+                ShearableChickenModelBase.ShearedChickenModel::new)
             : new Tuple<>(
-                ShearableChickenModelBase.ShearableChickenModel.class,
-                ShearableChickenModelBase.ShearableChickenModel::new);
+                ShearableChickenModelBase.DefaultChickenModel.class,
+                ShearableChickenModelBase.DefaultChickenModel::new);
 
+        // If the required entity type is different from the current one,
+        // replace the underlying entityModel
         if (!this.getEntityModel().getClass().equals(requiredModel.getA())){
             this.entityModel = requiredModel.getB().get();
         }
@@ -57,17 +66,16 @@ public class ShearableChickenRenderer<T extends ShearableChickenEntity>
             : DEFAULT_TEXTURE;
     }
 
+    // Once again, trying to use the original code so there won't be regression related bugs (at least, here)
     @Override
-    public float handleRotationFloat(T livingBase, float partialTicks) {
+    protected float handleRotationFloat(T livingBase, float partialTicks) {
+        ReflectionUtils.InstanceMethod<Float> shearableChickenRenderer = new ReflectionUtils.InstanceMethod<>(
+            ChickenRenderer.class, "handleRotationFloat", ChickenEntity.class, float.class);
         try {
-            Method m = ChickenRenderer.class
-                .getDeclaredMethod("handleRotationFloat", ChickenEntity.class, float.class);
-            m.setAccessible(true);
-            EntityRenderer<?> chickenRenderer = renderManager.renderers.get(EntityType.CHICKEN);
-            float result = (float)m.invoke(chickenRenderer, livingBase, partialTicks);
-            return result;
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            Entry.LOGGER.error("Failed to call ChickenRenderer.handleRotationFloat");
+            ChickenRenderer chickenRenderer = new ChickenRenderer(null);
+            return shearableChickenRenderer.invoke(chickenRenderer, livingBase, partialTicks);
+        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+            e.printStackTrace();
             return 0F;
         }
     }

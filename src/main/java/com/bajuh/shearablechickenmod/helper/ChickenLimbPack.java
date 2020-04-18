@@ -1,7 +1,12 @@
 package com.bajuh.shearablechickenmod.helper;
 
+import com.bajuh.shearablechickenmod.entity.ShearableChickenModelBase;
+import net.minecraft.client.renderer.entity.model.ChickenModel;
 import net.minecraft.client.renderer.model.Model;
 import net.minecraft.client.renderer.model.ModelRenderer;
+import net.minecraft.entity.Entity;
+
+import java.lang.reflect.Field;
 
 public class ChickenLimbPack {
     public ModelRenderer head;
@@ -13,8 +18,10 @@ public class ChickenLimbPack {
     public ModelRenderer bill;
     public ModelRenderer chin;
 
+    // This is the default chicken model. Code can be found in ChickenModel ctor.
     public static ChickenLimbPack CreateDefault(Model model){
         ChickenLimbPack lp = new ChickenLimbPack();
+
         lp.head = new ModelRenderer(model, 0, 0);
         lp.head.addBox(-2.0F, -6.0F, -2.0F, 4.0F, 6.0F, 3.0F, 0.0F);
         lp.head.setRotationPoint(0.0F, 15.0F, -4.0F);
@@ -43,12 +50,13 @@ public class ChickenLimbPack {
         return lp;
     }
 
-    /**
-     * @implNote
-     *  - Y grows towards bottom
-     *  - Y and Z is somehow mixed up, body Z is wing Y, etc.
-     */
+    // Experiences:
+    // - Y grows towards bottom
+    // - Y and Z is somehow mixed up, body Z is wing Y, etc.
+    // At least I annotated the modifications to the original chicken
     public static ChickenLimbPack CreateSheared(Model model){
+
+        // We use the default model and alter some of the limbs' offset
         ChickenLimbPack lp = CreateDefault(model);
 
         float bodyHeightOffset = -2;
@@ -85,5 +93,19 @@ public class ChickenLimbPack {
         lp.leftLeg.setRotationPoint(1.0F, 19.0F, 1.0F);
 
         return lp;
+    }
+
+    // By setting the limbs on the model, we can save extra copied Model methods
+    // Here, we assign the same named fields to their counterpart on Model
+    public <T extends Entity> void SetLimbs(ShearableChickenModelBase<T> model) {
+        try {
+            for (Field field: this.getClass().getDeclaredFields()){
+                Object limbValue = field.get(this);
+                ReflectionUtils.setInstanceField(
+                    ChickenModel.class.getDeclaredField(field.getName()), limbValue, model);
+            }
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            e.printStackTrace();
+        }
     }
 }
