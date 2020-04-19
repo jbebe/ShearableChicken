@@ -1,7 +1,6 @@
 package com.bajuh.shearablechickenmod.entity;
 
 import com.bajuh.shearablechickenmod.Constants;
-import com.bajuh.shearablechickenmod.Entry;
 import com.bajuh.shearablechickenmod.helper.RandomUtils;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.passive.ChickenEntity;
@@ -129,7 +128,6 @@ public class ShearableChickenEntity extends ChickenEntity implements IShearable 
             return itemsToDrop;
 
         // Shearing part
-        Entry.LOGGER.info("Chicken is sheared");
         this.setSheared(true);
         this.playSound(SoundEvents.ENTITY_SHEEP_SHEAR, 1.0F, 1.0F);
         this.shearedTimer = RandomUtils.nextInt(Constants.SHEAR_TICK_MIN, Constants.SHEAR_TICK_MAX, this.rand);

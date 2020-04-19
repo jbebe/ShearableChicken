@@ -29,12 +29,13 @@ public class ClientSetup {
 
         // Run the following operation:
         // > RenderingRegistry.INSTANCE.entityRenderers[EntityType.CHICKEN] = new ShearableChickenRenderer
+        // Note: We don't have to use the obfuscated field names because this is a Forge package, not from MC
         try {
             RenderingRegistry registry =
-                (RenderingRegistry)ReflectionUtils.getStaticField(RenderingRegistry.class.getDeclaredField("INSTANCE"));
+                (RenderingRegistry)ReflectionUtils.getStaticField(RenderingRegistry.class, "INSTANCE", false);
             Map<EntityType<? extends Entity>, IRenderFactory<? extends Entity>> renderers =
                 (Map<EntityType<? extends Entity>, IRenderFactory<? extends Entity>>)
-                    ReflectionUtils.getInstanceField(RenderingRegistry.class.getDeclaredField("entityRenderers"), registry);
+                    ReflectionUtils.getInstanceField(RenderingRegistry.class, "entityRenderers", registry, false);
             renderers.put(EntityType.CHICKEN, manager -> new ShearableChickenRenderer(manager));
 
             Entry.LOGGER.info("Chicken renderer replaced with fake one");

@@ -1,5 +1,6 @@
 package com.bajuh.shearablechickenmod.helper;
 
+import com.bajuh.shearablechickenmod.Constants;
 import com.bajuh.shearablechickenmod.entity.ShearableChickenModelBase;
 import net.minecraft.client.renderer.entity.model.ChickenModel;
 import net.minecraft.client.renderer.model.Model;
@@ -101,8 +102,9 @@ public class ChickenLimbPack {
         try {
             for (Field field: this.getClass().getDeclaredFields()){
                 Object limbValue = field.get(this);
+                String obfuscated = Constants.chickenModelFields.get(field.getName());
                 ReflectionUtils.setInstanceField(
-                    ChickenModel.class.getDeclaredField(field.getName()), limbValue, model);
+                    ChickenModel.class, obfuscated, limbValue, model, true);
             }
         } catch (IllegalAccessException | NoSuchFieldException e) {
             e.printStackTrace();

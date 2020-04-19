@@ -1,5 +1,8 @@
 package com.bajuh.shearablechickenmod;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class Constants {
 
     public static final String ModID = "shearablechickenmod";
@@ -21,4 +24,24 @@ public class Constants {
     // Debug only chicken-like entity with spawn egg
     public static final String StandaloneShearableChickenId = "shearablechicken_standalone";
     public static final String ShearableChickenEggId = "shearablechicken_egg";
+
+    //
+    // Obfuscated variable names
+    //
+
+    public static final String handleRotationFloat = "func_77044_a";
+    public static final String CHICKEN_TEXTURES = "field_110920_a";
+    public static final Map<String, String> chickenModelFields = new HashMap<String, String>() {
+        {
+            put("head", "field_78142_a");
+            put("body", "field_78140_b");
+            put("rightLeg", "field_78141_c");
+            put("leftLeg", "field_78138_d");
+            put("rightWing", "field_78139_e");
+            put("leftWing", "field_78136_f");
+            put("bill", "field_78137_g");
+            put("chin", "field_78143_h");
+        }
+    };
+
 }

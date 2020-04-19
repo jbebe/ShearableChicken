@@ -1,12 +1,26 @@
 package com.bajuh.shearablechickenmod.helper;
 
+import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.function.Consumer;
 
 // Generic reflection helpers to aid MC source modification
 public class ReflectionUtils {
+
+    public static <T> Field getField(final Class<? super T> $class, final String fieldName, final Boolean shouldTranslate)
+        throws NoSuchFieldException
+    {
+        if (shouldTranslate){
+            return ObfuscationReflectionHelper.findField($class, fieldName);
+        }
+        else {
+            return $class.getDeclaredField(fieldName);
+        }
+    }
 
     public static class InstanceMethod<T> {
 
@@ -21,17 +35,18 @@ public class ReflectionUtils {
         }
 
         public T invoke(Object instance, Object... args)
-            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException
+            throws InvocationTargetException, IllegalAccessException
         {
-            Method m = classType.getDeclaredMethod(methodName, methodParams);
-            m.setAccessible(true);
-            return (T)m.invoke(instance, args);
+            Method method = ObfuscationReflectionHelper.findMethod(classType, methodName, methodParams);
+            method.setAccessible(true);
+            return (T)method.invoke(instance, args);
         }
     }
 
-    public static void setStaticFinalField(Field field, Object newValue)
+    public static <T> void setStaticFinalField(Class<? super T> $class, String fieldName, Object newValue, Boolean shouldTranslate)
         throws NoSuchFieldException, IllegalAccessException
     {
+        Field field = getField($class, fieldName, shouldTranslate);
         field.setAccessible(true);
         Field modifiersField = Field.class.getDeclaredField("modifiers");
         modifiersField.setAccessible(true);
@@ -39,24 +54,39 @@ public class ReflectionUtils {
         field.set(null, newValue);
     }
 
-    public static void setStaticField(Field field, Object newValue) throws IllegalAccessException {
+    public static <T> void setStaticField(
+        Class<? super T> $class, String fieldName, Object newValue, Boolean shouldTranslate)
+        throws IllegalAccessException, NoSuchFieldException
+    {
+        Field field = getField($class, fieldName, shouldTranslate);
         field.setAccessible(true);
         field.set(null, newValue);
     }
 
-    public static Object getStaticField(Field field) throws IllegalAccessException {
+    public static <T> Object getStaticField(Class<? super T> $class, String fieldName, Boolean shouldTranslate)
+        throws IllegalAccessException, NoSuchFieldException
+    {
+        Field field = getField($class, fieldName, shouldTranslate);
+
         field.setAccessible(true);
         return field.get(null);
     }
 
-    public static Object getInstanceField(Field field, Object instance) throws IllegalAccessException {
+    public static <T> Object getInstanceField(
+        Class<? super T> $class, String fieldName, Object instance, Boolean shouldTranslate)
+        throws IllegalAccessException, NoSuchFieldException
+    {
+        Field field = getField($class, fieldName, shouldTranslate);
         field.setAccessible(true);
         return field.get(instance);
     }
 
-    public static void setInstanceFinalField(Field field, Object newValue, Object instance)
+    public static <T> void setInstanceFinalField(
+        Class<? super T> $class, String fieldName, Object newValue, Object instance, Boolean shouldTranslate)
         throws NoSuchFieldException, IllegalAccessException
     {
+        Field field = getField($class, fieldName, shouldTranslate);
+
         field.setAccessible(true);
 
         Field modifiersField = Field.class.getDeclaredField("modifiers");
@@ -66,11 +96,12 @@ public class ReflectionUtils {
         field.set(instance, newValue);
     }
 
-    public static void setInstanceField(Field field, Object newValue, Object instance)
-        throws IllegalAccessException
+    public static <T> void setInstanceField(
+        Class<? super T> $class, String fieldName, Object newValue, Object instance, Boolean shouldTranslate)
+        throws IllegalAccessException, NoSuchFieldException
     {
+        Field field = getField($class, fieldName, shouldTranslate);
         field.setAccessible(true);
-
         field.set(instance, newValue);
     }
 
@@ -80,9 +111,24 @@ public class ReflectionUtils {
         for (Field field: type.getDeclaredFields()){
             boolean isStatic = (field.getModifiers() & Modifier.STATIC) != 0;
             if (!isStatic){
-                Object obj = getInstanceField(field, fromInstance);
-                setInstanceFinalField(field, obj, toInstance);
+                field.setAccessible(true);
+                Object obj = field.get(fromInstance);
+
+                field.setAccessible(true);
+                Field modifiersField = Field.class.getDeclaredField("modifiers");
+                modifiersField.setAccessible(true);
+                modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+                field.set(toInstance, obj);
             }
         }
+    }
+
+    public static <T> void printFields(Class<? super T> $class, Consumer<String> printCallback){
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("\n%s fields:\n", $class.getName()));
+        for (Field f: $class.getDeclaredFields()){
+            sb.append(String.format("\t- %s (type: %s)\n", f.getName(), f.getType().getName()));
+        }
+        printCallback.accept(sb.toString());
     }
 }
