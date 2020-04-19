@@ -54,7 +54,10 @@ public class ShearableChickenEggItem extends Item {
             blockpos2 = blockpos.offset(direction);
         }
 
-        if (ObjectRegistration.SHEARABLE_CHICKEN.get().spawn(world, itemstack, context.getPlayer(), blockpos2, SpawnReason.SPAWN_EGG, true, !Objects.equals(blockpos, blockpos2) && direction == Direction.UP) != null) {
+        if (ObjectRegistration.SHEARABLE_CHICKEN.get().spawn(
+            world, itemstack, context.getPlayer(), blockpos2, SpawnReason.SPAWN_EGG, true,
+            !Objects.equals(blockpos, blockpos2) && direction == Direction.UP) != null)
+        {
             itemstack.shrink(1);
         }
 

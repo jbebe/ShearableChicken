@@ -3,7 +3,7 @@ package com.bajuh.shearablechickenmod.proxy;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.world.World;
 
-public class ServerProxy implements IProxy {
+public class ServerProxy extends ProxyBase {
 
     @Override
     public World getClientWorld() {
@@ -16,7 +16,7 @@ public class ServerProxy implements IProxy {
     }
 
     @Override
-    public boolean isRemote() {
-        return false;
+    public boolean isServer(){
+        return true;
     }
 }
